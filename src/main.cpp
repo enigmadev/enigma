@@ -2342,6 +2342,26 @@ bool CBlock::CheckBlockSignature() const
     vector<valtype> vSolutions;
     txnouttype whichType;
 
+    // fix incorrect check
+    if (pindexBest->nHeight >= 9500)
+    {
+        const CTxOut& txout = vtx[1].vout[1];
+
+        if (!Solver(txout.scriptPubKey, whichType, vSolutions))
+          return false;
+        if (whichType == TX_PUBKEY)
+        {
+          valtype& vchPubKey = vSolutions[0];
+          CKey key;
+          if (!key.SetPubKey(vchPubKey))
+            return false;
+          if (vchBlockSig.empty())
+            return false;
+          return key.Verify(GetHash(), vchBlockSig);
+        }
+    }
+    else
+    {
 
         for(unsigned int i = 0; i < vtx[0].vout.size(); i++)
         {
@@ -2365,6 +2385,7 @@ bool CBlock::CheckBlockSignature() const
                 return true;
             }
         }
+    }
     return false;
 }
 
